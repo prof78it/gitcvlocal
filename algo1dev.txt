@@ -185,6 +185,14 @@ void OnDeinit(const int reason)
    ObjectDelete(0,"L5");
    ObjectDelete(0,"L6");
    ObjectDelete(0,"L7");
+   
+   ObjectDelete(0,"L9");
+   ObjectDelete(0,"L10");
+   ObjectDelete(0,"L11");
+   ObjectDelete(0,"L12");
+   ObjectDelete(0,"L13");
+   ObjectDelete(0,"L14");
+   ObjectDelete(0,"L15");
 
    ObjectsDeleteAll(0,"Pros");
 
@@ -698,7 +706,21 @@ void Text()
    Y+=2*FontSize;
    text="Проверка ";
    if(Bal<MathAbs(2*maxDD))text="Проверка ПЛОХО";
-   LabelCreate(0,"L7",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
+   LabelCreate(0,"L8",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
+   
+    Y+=2*FontSize;
+   if(trend==1)text="Направление тренда :Вверх";
+   if(trend==2)text="Направление тренда :Вниз";
+   LabelCreate(0,"L9",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
+   
+   Y+=2*FontSize;
+   if(tru_trend==1)text="Направление истинного тренда :Вверх";
+   if(tru_trend==2)text="Направление истинного тренда :Вниз";
+   LabelCreate(0,"L10",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
+   
+   Y+=2*FontSize;
+   text="Смена тренда: "+IntegerToString(smena_trendaB);
+   LabelCreate(0,"L11",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
 
 
  
