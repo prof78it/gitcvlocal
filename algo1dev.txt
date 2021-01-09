@@ -246,7 +246,7 @@ void OnTick()
    if(TimeCurrent()+prevtime>=ptime)
      {
 
-
+      ptime=time[0]+PeriodSeconds();
       MqlTick last_tick;
       ZeroMemory(last_tick);
       if(SymbolInfoTick(Symbol(),last_tick))
@@ -321,8 +321,8 @@ void OnTick()
            {
             MyMarkets();
             if(LastCom>MathAbs(StopTrade) && stopLot==0){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
-            double size=GetLot();
-            trade.Buy(size);
+            double sizes=GetLot();
+            trade.Buy(sizes);
            }
         }
 
@@ -332,8 +332,8 @@ void OnTick()
            {
             MyMarkets();
             if(LastCom>MathAbs(StopTrade) && stopLot==0){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
-            double size=GetLot();
-            trade.Sell(size);
+            double sizes=GetLot();
+            trade.Sell(sizes);
            }
         }
 
