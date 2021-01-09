@@ -82,6 +82,7 @@ double LastLot,LastProf,sBal=0,Bal=0;
 int LastType=0;
 int LastCom=0;
 double maxDD=0,DD[],Eq;
+int stopLot=0;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -309,7 +310,7 @@ void OnTick()
          if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
-            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();return;}
+            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
             double size=GetLot();
             trade.Buy(size);
            }
@@ -320,7 +321,7 @@ void OnTick()
          if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
-            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();return;}
+            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
             double size=GetLot();
             trade.Sell(size);
            }
@@ -565,6 +566,8 @@ double GetLot()
    double lots=Lot;
 
    if( LastProf<0)lots=LastLot*Coef;
+   
+   if(stopLot==1){lots=Lot;stopLot=0;}
 
    double minLot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
    double maxLot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MAX);
