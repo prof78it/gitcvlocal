@@ -310,7 +310,7 @@ void OnTick()
          if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
-            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
+            if(LastCom>MathAbs(StopTrade) && stopLot==0){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
             double size=GetLot();
             trade.Buy(size);
            }
@@ -321,7 +321,7 @@ void OnTick()
          if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
-            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
+            if(LastCom>MathAbs(StopTrade) && stopLot==0){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
             double size=GetLot();
             trade.Sell(size);
            }
@@ -509,7 +509,7 @@ int Last2()
 
    LastCom=0;
 
-   HistorySelect(ptime,TimeCurrent());
+   HistorySelect(0,TimeCurrent());
 //--- create objects 
    uint     total=HistoryDealsTotal();
    ulong    ticket=0;
@@ -564,6 +564,7 @@ double GetLot()
   {
 
    double lots=Lot;
+   Last();
 
    if( LastProf<0)lots=LastLot*Coef;
    
