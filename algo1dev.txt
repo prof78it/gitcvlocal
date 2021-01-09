@@ -29,6 +29,7 @@ input int StopTrade=-3;//Запрет торговли при убытке N т�
 input int StopBars=25;//Длительность запрета
 input double Rotate=50;//Oграничение смены тренда в % 
 input bool Reverse=false;//Противофаза
+input int Step=10;//Минимальное расстояние от цены открытия
 input ENUM_ORDER_TYPE_FILLING Tmode=ORDER_FILLING_RETURN;//Торговый режим 
 
 input bool Day1=true;//Торговать в понедельник:
@@ -267,6 +268,8 @@ void OnTick()
       trend=0;
       if(Close[0]>Open[0])trend=1;
       else trend=2;
+      
+      
 
       tru_trend=0;
       smena_trendaB=0;
@@ -295,6 +298,7 @@ void OnTick()
 
       ress=(int)(modul_p*smena_trendaR*(Open[0]/(100*_Point)));
 
+      if((OPb>0 && OPs==0 && MathAbs(Bid-OPb)>=Step*_Point) || (OPs>0 && OPb==0 && MathAbs(Ask-OPs)>=Step*_Point))
       if(BuyCount+SellCount>0)trade.PositionClose(_Symbol);
 
 
@@ -351,6 +355,7 @@ int MyMarkets()
    OPs=0;
    BuyLots=0;
    SellLots=0;
+ 
 
    for(int i=0;i<PositionsTotal();i++)
      {
@@ -363,12 +368,14 @@ int MyMarkets()
                BuyCount++;
                OPb=PositionGetDouble(POSITION_PRICE_OPEN);
                BuyLots=PositionGetDouble(POSITION_VOLUME);
+            
               }
             if(PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_SELL)
               {
                SellCount++;
                OPs=PositionGetDouble(POSITION_PRICE_OPEN);
                SellLots=PositionGetDouble(POSITION_VOLUME);
+               
               }
            }
 
