@@ -21,7 +21,7 @@ enum tmode
 //--- input parameters
 input int MagicNumber=123;//Magic Number
 input int Slippage=30;//Максимальное проскальзывание
-input tmode start_trend=0;//Направление начального истинного тренда 
+input tmode start_trend=1;//Направление начального истинного тренда 
 input int prevtime=10;//Открывать сделку за, секунд до начала нового бара
 input double Lot=1.0;//Первоначальный лот 
 input double Coef=1.5;//Усреднение
@@ -29,6 +29,7 @@ input int StopTrade=-3;//Запрет торговли при убытке N т�
 input int StopBars=25;//Длительность запрета
 input double Rotate=50;//Oграничение смены тренда в % 
 input bool Reverse=false;//Противофаза
+input int Step=10;//Минимальное расстояние от цены открытия
 input ENUM_ORDER_TYPE_FILLING Tmode=ORDER_FILLING_RETURN;//Торговый режим 
 
 input bool Day1=true;//Торговать в понедельник:
@@ -43,6 +44,8 @@ input string TimeD3="10:00-23:15";//Период 3:
 input string TimeD4="10:00-23:15";//Период 4:
 input string TimeD5="10:00-23:15";//Период 5:
 
+input bool ShowText=true;
+input int size=50;//Расстояние до сигналов
 input int               InpX=80;                // Расстояние по оси X 
 input int               InpY=80;                // Расстояние по оси Y 
 input int               FontSize=10;            // Размер шрифта
@@ -81,6 +84,7 @@ double LastLot,LastProf,sBal=0,Bal=0;
 int LastType=0;
 int LastCom=0;
 double maxDD=0,DD[],Eq;
+int stopLot=0;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -183,6 +187,14 @@ void OnDeinit(const int reason)
    ObjectDelete(0,"L5");
    ObjectDelete(0,"L6");
    ObjectDelete(0,"L7");
+   
+   ObjectDelete(0,"L9");
+   ObjectDelete(0,"L10");
+   ObjectDelete(0,"L11");
+   ObjectDelete(0,"L12");
+   ObjectDelete(0,"L13");
+   ObjectDelete(0,"L14");
+   ObjectDelete(0,"L15");
 
    ObjectsDeleteAll(0,"Pros");
 
@@ -229,12 +241,12 @@ void OnTick()
 
 //------------------------------------------------------------------------------
 
-   CopyTime(NULL,0,0,1,time);
+   CopyTime(NULL,PERIOD_M5,0,1,time);
 
-   if(TimeCurrent()+prevtime>=ptime)
+   if(time[0]>ptime)
      {
 
-
+      ptime=time[0]+PeriodSeconds();
       MqlTick last_tick;
       ZeroMemory(last_tick);
       if(SymbolInfoTick(Symbol(),last_tick))
@@ -267,11 +279,13 @@ void OnTick()
       trend=0;
       if(Close[0]>Open[0])trend=1;
       else trend=2;
+      
+      
 
       tru_trend=0;
       smena_trendaB=0;
 
-      if(vol_hvost_p>Rotate)
+      if(vol_hvost_p*100>Rotate)
         {
          tru_trend=trend;
          smena_trendaB=1;
@@ -281,6 +295,8 @@ void OnTick()
          tru_trend=ptru_trend;
          smena_trendaB=-1;
         }
+        
+         
 
       smena_trendaS=0;
       if(tru_trend==ptru_trend)smena_trendaS=1;
@@ -293,44 +309,42 @@ void OnTick()
 
       ress=(int)(modul_p*smena_trendaR*(Open[0]/(100*_Point)));
 
+      if((OPb>0 && OPs==0 && MathAbs(Bid-OPb)>=Step*_Point) || (OPs>0 && OPb==0 && MathAbs(Ask-OPs)>=Step*_Point))
       if(BuyCount+SellCount>0)trade.PositionClose(_Symbol);
 
 
       Last();
       Last2();
-      if((trend==1 && Reverse==false) || (trend==2 && Reverse==true))
+      if((tru_trend==1 && Reverse==false) || (trend==2 && Reverse==true))
         {
-         if(BuyCount+SellCount==0)
+         if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
-            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();return;}
-            double size=GetLot();
-            trade.Buy(size);
+            if(LastCom>MathAbs(StopTrade) && stopLot==0){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
+            double sizes=GetLot();
+            trade.Buy(sizes);
            }
         }
 
-      if((trend==2 && Reverse==false) || (trend==1 && Reverse==true))
+      if((tru_trend==2 && Reverse==false) || (trend==1 && Reverse==true))
         {
-         if(BuyCount+SellCount==0)
+         if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
-            if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();return;}
-            double size=GetLot();
-            trade.Sell(size);
+            if(LastCom>MathAbs(StopTrade) && stopLot==0){ptime=time[0]+StopBars*PeriodSeconds();stopLot=1;return;}
+            double sizes=GetLot();
+            trade.Sell(sizes);
            }
         }
 
       MyMarkets();
-      Text();
+      if(ShowText==true)Text();
 
       if(BuyCount+SellCount>0)
-        {
-         if(ptime<time[0])
-            ptime=time[0]+PeriodSeconds();
-         else ptime=time[0]+2*PeriodSeconds(); 
-        }
+      ptime=time[0];
 
      }
+     
   }
 //+------------------------------------------------------------------+
 //| Timer function                                                   |
@@ -349,6 +363,7 @@ int MyMarkets()
    OPs=0;
    BuyLots=0;
    SellLots=0;
+ 
 
    for(int i=0;i<PositionsTotal();i++)
      {
@@ -361,12 +376,14 @@ int MyMarkets()
                BuyCount++;
                OPb=PositionGetDouble(POSITION_PRICE_OPEN);
                BuyLots=PositionGetDouble(POSITION_VOLUME);
+            
               }
             if(PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_SELL)
               {
                SellCount++;
                OPs=PositionGetDouble(POSITION_PRICE_OPEN);
                SellLots=PositionGetDouble(POSITION_VOLUME);
+               
               }
            }
 
@@ -467,6 +484,19 @@ int Last()
 
                LastProf=profit;
                LastLot=volume;
+              
+              
+              if(profit<0)maxdd+=profit;
+
+               else {LastCom=0;
+               
+                  if(maxdd<0){
+                  ArrayResize(DD,j+1);
+                  DD[j]=maxdd;
+                  j++;
+                  maxdd=0;
+               
+               }}
 
               }
 
@@ -474,7 +504,9 @@ int Last()
         }
      }
 
-   ArraySort(DD);
+      ArraySort(DD);
+   if(j>0)
+   maxDD=DD[0];
 
    return(0);
   }
@@ -484,11 +516,7 @@ int Last2()
 
    LastCom=0;
 
-   double maxdd=0;
-   int j=0;
-   ArrayFree(DD);
-
-   HistorySelect(ptime,TimeCurrent());
+   HistorySelect(0,TimeCurrent());
 //--- create objects 
    uint     total=HistoryDealsTotal();
    ulong    ticket=0;
@@ -525,17 +553,8 @@ int Last2()
             if(entry==DEAL_ENTRY_OUT)
               {
 
-
-               if(profit<0)
-                 {
-                  LastCom++;
-                  ArrayResize(DD,j+1);
-                  DD[j]=maxdd;
-                  j++;
-                  
-                 }
+               if(profit<0)LastCom++;
                else LastCom=0;
- 
 
               }
 
@@ -543,7 +562,7 @@ int Last2()
         }
      }
 
-   ArraySort(DD);
+
 
    return(0);
   }
@@ -552,8 +571,11 @@ double GetLot()
   {
 
    double lots=Lot;
+   Last();
 
    if( LastProf<0)lots=LastLot*Coef;
+   
+   if(stopLot==1){lots=Lot;stopLot=0;}
 
    double minLot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
    double maxLot=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MAX);
@@ -683,10 +705,38 @@ void Text()
    Y+=2*FontSize;
    text="Проверка ";
    if(Bal<MathAbs(2*maxDD))text="Проверка ПЛОХО";
-   LabelCreate(0,"L7",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
+   LabelCreate(0,"L8",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
+   
+   datetime date[];  
+   double   low[];   
+   double   high[];  
+   
+   CopyTime(Symbol(),Period(),0,1,date);
+   CopyLow(Symbol(),Period(),0,1,low);
+   CopyHigh(Symbol(),Period(),0,1,high);
+   color text2=clrWhite;
+
+   
+    Y+=2*FontSize;
+   if(trend==1){text="Направление тренда :Вверх";text2=clrGreen;}
+   if(trend==2){text="Направление тренда :Вниз";text2=clrRed;}
+   LabelCreate(0,"L9",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0); 
+   ArrowCreate(0,"Trend"+(string)date[0],0,date[0]-PeriodSeconds(),high[0]+size*_Point,108,ANCHOR_TOP,text2,STYLE_SOLID,2,false,false,true,0); 
+
+   
+   Y+=2*FontSize;
+   if(tru_trend==1){text="Направление истинного тренда :Вверх";text2=clrBlue;}
+   if(tru_trend==2){text="Направление истинного тренда :Вниз";text2=clrBrown;}
+   LabelCreate(0,"L10",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
+   ArrowCreate(0,"TruTrend"+(string)date[0],0,date[0]-PeriodSeconds(),low[0]-size*_Point,108,ANCHOR_BOTTOM,text2,STYLE_SOLID,2,false,false,true,0); 
+    
+   
+   Y+=2*FontSize;
+   text="Смена тренда: "+IntegerToString(smena_trendaB);
+   LabelCreate(0,"L11",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
 
 
-/*
+ 
    int sz=ArraySize(DD);
    if(sz>0)
      {
@@ -701,11 +751,67 @@ void Text()
 
         }
      }
-     */
+      
  
 
   }
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+ 
+//| Создает стрелку                                                  | 
+//+------------------------------------------------------------------+ 
+bool ArrowCreate(const long              chart_ID=0,           // ID графика 
+                 const string            name="Arrow",         // имя стрелки 
+                 const int               sub_window=0,         // номер подокна 
+                 datetime                times=0,               // время точки привязки 
+                 double                  price=0,              // цена точки привязки 
+                 const uchar             arrow_code=252,       // код стрелки 
+                 const ENUM_ARROW_ANCHOR anchor=ANCHOR_BOTTOM, // положение точки привязки 
+                 const color             clr=clrRed,           // цвет стрелки 
+                 const ENUM_LINE_STYLE   style=STYLE_SOLID,    // стиль окаймляющей линии 
+                 const int               width=3,              // размер стрелки 
+                 const bool              back=false,           // на заднем плане 
+                 const bool              selection=true,       // выделить для перемещений 
+                 const bool              hidden=true,          // скрыт в списке объектов 
+                 const long              z_order=0)            // приоритет на нажатие мышью 
+  { 
+//--- установим координаты точки привязки, если они не заданы 
+ 
+//--- сбросим значение ошибки 
+   ResetLastError(); 
+   
+   
+//--- создадим стрелку 
+   if(!ObjectCreate(chart_ID,name,OBJ_ARROW,sub_window,times,price)) 
+     { 
+      Print(__FUNCTION__, 
+            ": не удалось создать стрелку! Код ошибки = ",GetLastError()); 
+      return(false); 
+     } 
+//--- установим код стрелки 
+   ObjectSetInteger(chart_ID,name,OBJPROP_ARROWCODE,arrow_code); 
+//--- установим способ привязки 
+   ObjectSetInteger(chart_ID,name,OBJPROP_ANCHOR,anchor); 
+//--- установим цвет стрелки 
+   ObjectSetInteger(chart_ID,name,OBJPROP_COLOR,clr); 
+//--- установим стиль окаймляющей линии 
+   ObjectSetInteger(chart_ID,name,OBJPROP_STYLE,style); 
+//--- установим размер стрелки 
+   ObjectSetInteger(chart_ID,name,OBJPROP_WIDTH,width); 
+//--- отобразим на переднем (false) или заднем (true) плане 
+   ObjectSetInteger(chart_ID,name,OBJPROP_BACK,back); 
+//--- включим (true) или отключим (false) режим перемещения стрелки мышью 
+//--- при создании графического объекта функцией ObjectCreate, по умолчанию объект 
+//--- нельзя выделить и перемещать. Внутри же этого метода параметр selection 
+//--- по умолчанию равен true, что позволяет выделять и перемещать этот объект 
+   ObjectSetInteger(chart_ID,name,OBJPROP_SELECTABLE,selection); 
+   ObjectSetInteger(chart_ID,name,OBJPROP_SELECTED,selection); 
+//--- скроем (true) или отобразим (false) имя графического объекта в списке объектов 
+   ObjectSetInteger(chart_ID,name,OBJPROP_HIDDEN,hidden); 
+//--- установим приоритет на получение события нажатия мыши на графике 
+   ObjectSetInteger(chart_ID,name,OBJPROP_ZORDER,z_order); 
+//--- успешное выполнение 
+   return(true); 
+  } 
 
 //+------------------------------------------------------------------+
 
