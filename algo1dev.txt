@@ -348,6 +348,7 @@ void OnTick()
         }
 
      }
+     
   }
 //+------------------------------------------------------------------+
 //| Timer function                                                   |
@@ -724,14 +725,14 @@ void Text()
    if(trend==1){text="Направление тренда :Вверх";text2=clrGreen;}
    if(trend==2){text="Направление тренда :Вниз";text2=clrRed;}
    LabelCreate(0,"L9",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0); 
-   ArrowCreate(0,"Trend"+(string)date[0],0,date[0],high[0]+size*_Point,108,ANCHOR_TOP,text2,STYLE_SOLID,2,false,false,true,0); 
+   ArrowCreate(0,"Trend"+(string)date[0],0,date[0]-PeriodSeconds(),high[0]+size*_Point,108,ANCHOR_TOP,text2,STYLE_SOLID,2,false,false,true,0); 
 
    
    Y+=2*FontSize;
    if(tru_trend==1){text="Направление истинного тренда :Вверх";text2=clrBlue;}
    if(tru_trend==2){text="Направление истинного тренда :Вниз";text2=clrBrown;}
    LabelCreate(0,"L10",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
-   ArrowCreate(0,"TruTrend"+(string)date[0],0,date[0],low[0]-size*_Point,108,ANCHOR_BOTTOM,text2,STYLE_SOLID,2,false,false,true,0); 
+   ArrowCreate(0,"TruTrend"+(string)date[0],0,date[0]-PeriodSeconds(),low[0]-size*_Point,108,ANCHOR_BOTTOM,text2,STYLE_SOLID,2,false,false,true,0); 
     
    
    Y+=2*FontSize;
