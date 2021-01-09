@@ -44,6 +44,8 @@ input string TimeD3="10:00-23:15";//Период 3:
 input string TimeD4="10:00-23:15";//Период 4:
 input string TimeD5="10:00-23:15";//Период 5:
 
+input bool ShowText=true;
+input int size=50;//Расстояние до сигналов
 input int               InpX=80;                // Расстояние по оси X 
 input int               InpY=80;                // Расстояние по оси Y 
 input int               FontSize=10;            // Размер шрифта
@@ -336,7 +338,7 @@ void OnTick()
         }
 
       MyMarkets();
-      Text();
+      if(ShowText==true)Text();
 
       if(BuyCount+SellCount>0)
         {
@@ -715,22 +717,22 @@ void Text()
    CopyTime(Symbol(),Period(),0,1,date);
    CopyLow(Symbol(),Period(),0,1,low);
    CopyHigh(Symbol(),Period(),0,1,high);
-   string text2="";
+   color text2=clrWhite;
 
    
     Y+=2*FontSize;
-   if(trend==1){text="Направление тренда :Вверх";text2="тренд:Вверх";}
-   if(trend==2){text="Направление тренда :Вниз";text2="тренд:Вниз";}
-   LabelCreate(0,"L9",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
-   TextCreate(0,"TextHigh_"+(string)date[0],0,date[0],high[0]+10*_Point,text2,"Arial",10,clrWhite,90,ANCHOR_LEFT,false,false,true,0); 
+   if(trend==1){text="Направление тренда :Вверх";text2=clrGreen;}
+   if(trend==2){text="Направление тренда :Вниз";text2=clrRed;}
+   LabelCreate(0,"L9",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0); 
+   ArrowCreate(0,"Trend"+(string)date[0],0,date[0],high[0]+size*_Point,108,ANCHOR_TOP,text2,STYLE_SOLID,2,false,false,true,0); 
 
    
    Y+=2*FontSize;
-   if(tru_trend==1){text="Направление истинного тренда :Вверх";text2="ист.тренд:Вверх";}
-   if(tru_trend==2){text="Направление истинного тренда :Вниз";text2="ист.тренд:Вниз";}
+   if(tru_trend==1){text="Направление истинного тренда :Вверх";text2=clrBlue;}
+   if(tru_trend==2){text="Направление истинного тренда :Вниз";text2=clrBrown;}
    LabelCreate(0,"L10",0,InpX,Y,InpCorner2,text,"Arial",FontSize,clrs,0,InpAnchor,false,false,true,0);
-    TextCreate(0,"TextLow_"+(string)date[0],0,date[0],low[0]-100*_Point,text2,"Arial",10,clrWhite,270,ANCHOR_RIGHT,false,false,true,0); 
-
+   ArrowCreate(0,"TruTrend"+(string)date[0],0,date[0],low[0]-size*_Point,108,ANCHOR_BOTTOM,text2,STYLE_SOLID,2,false,false,true,0); 
+    
    
    Y+=2*FontSize;
    text="Смена тренда: "+IntegerToString(smena_trendaB);
@@ -758,49 +760,52 @@ void Text()
   }
 //+------------------------------------------------------------------+
 //+------------------------------------------------------------------+ 
-//| Создает объект "Текст"                                           | 
+//| Создает стрелку                                                  | 
 //+------------------------------------------------------------------+ 
-bool TextCreate(const long              chart_ID=0,               // ID графика 
-                const string            name="Text",              // имя объекта 
-                const int               sub_window=0,             // номер подокна 
-                datetime                times=0,                   // время точки привязки 
-                double                  price=0,                  // цена точки привязки 
-                const string            text="Text",              // сам текст 
-                const string            font="Arial",             // шрифт 
-                const int               font_size=10,             // размер шрифта 
-                const color             clr=clrRed,               // цвет 
-                const double            angle=0.0,                // наклон текста 
-                const ENUM_ANCHOR_POINT anchor=ANCHOR_LEFT_UPPER, // способ привязки 
-                const bool              back=false,               // на заднем плане 
-                const bool              selection=false,          // выделить для перемещений 
-                const bool              hidden=true,              // скрыт в списке объектов 
-                const long              z_order=0)                // приоритет на нажатие мышью 
+bool ArrowCreate(const long              chart_ID=0,           // ID графика 
+                 const string            name="Arrow",         // имя стрелки 
+                 const int               sub_window=0,         // номер подокна 
+                 datetime                times=0,               // время точки привязки 
+                 double                  price=0,              // цена точки привязки 
+                 const uchar             arrow_code=252,       // код стрелки 
+                 const ENUM_ARROW_ANCHOR anchor=ANCHOR_BOTTOM, // положение точки привязки 
+                 const color             clr=clrRed,           // цвет стрелки 
+                 const ENUM_LINE_STYLE   style=STYLE_SOLID,    // стиль окаймляющей линии 
+                 const int               width=3,              // размер стрелки 
+                 const bool              back=false,           // на заднем плане 
+                 const bool              selection=true,       // выделить для перемещений 
+                 const bool              hidden=true,          // скрыт в списке объектов 
+                 const long              z_order=0)            // приоритет на нажатие мышью 
   { 
-
+//--- установим координаты точки привязки, если они не заданы 
+ 
 //--- сбросим значение ошибки 
    ResetLastError(); 
-//--- создадим объект "Текст" 
-   if(!ObjectCreate(chart_ID,name,OBJ_TEXT,sub_window,times,price)) 
+   
+   
+//--- создадим стрелку 
+   if(!ObjectCreate(chart_ID,name,OBJ_ARROW,sub_window,times,price)) 
      { 
       Print(__FUNCTION__, 
-            ": не удалось создать объект \"Текст\"! Код ошибки = ",GetLastError()); 
+            ": не удалось создать стрелку! Код ошибки = ",GetLastError()); 
       return(false); 
      } 
-//--- установим текст 
-   ObjectSetString(chart_ID,name,OBJPROP_TEXT,text); 
-//--- установим шрифт текста 
-   ObjectSetString(chart_ID,name,OBJPROP_FONT,font); 
-//--- установим размер шрифта 
-   ObjectSetInteger(chart_ID,name,OBJPROP_FONTSIZE,font_size); 
-//--- установим угол наклона текста 
-   ObjectSetDouble(chart_ID,name,OBJPROP_ANGLE,angle); 
+//--- установим код стрелки 
+   ObjectSetInteger(chart_ID,name,OBJPROP_ARROWCODE,arrow_code); 
 //--- установим способ привязки 
    ObjectSetInteger(chart_ID,name,OBJPROP_ANCHOR,anchor); 
-//--- установим цвет 
+//--- установим цвет стрелки 
    ObjectSetInteger(chart_ID,name,OBJPROP_COLOR,clr); 
+//--- установим стиль окаймляющей линии 
+   ObjectSetInteger(chart_ID,name,OBJPROP_STYLE,style); 
+//--- установим размер стрелки 
+   ObjectSetInteger(chart_ID,name,OBJPROP_WIDTH,width); 
 //--- отобразим на переднем (false) или заднем (true) плане 
    ObjectSetInteger(chart_ID,name,OBJPROP_BACK,back); 
-//--- включим (true) или отключим (false) режим перемещения объекта мышью 
+//--- включим (true) или отключим (false) режим перемещения стрелки мышью 
+//--- при создании графического объекта функцией ObjectCreate, по умолчанию объект 
+//--- нельзя выделить и перемещать. Внутри же этого метода параметр selection 
+//--- по умолчанию равен true, что позволяет выделять и перемещать этот объект 
    ObjectSetInteger(chart_ID,name,OBJPROP_SELECTABLE,selection); 
    ObjectSetInteger(chart_ID,name,OBJPROP_SELECTED,selection); 
 //--- скроем (true) или отобразим (false) имя графического объекта в списке объектов 
