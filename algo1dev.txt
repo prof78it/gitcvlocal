@@ -241,12 +241,12 @@ void OnTick()
 
 //------------------------------------------------------------------------------
 
-   CopyTime(NULL,PERIOD_M5,0,1,time);
+   CopyTime(NULL,0,0,1,time);
 
    if(time[0]>ptime)
      {
 
-      ptime=time[0]+PeriodSeconds();
+ 
       MqlTick last_tick;
       ZeroMemory(last_tick);
       if(SymbolInfoTick(Symbol(),last_tick))
