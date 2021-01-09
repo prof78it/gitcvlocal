@@ -285,7 +285,7 @@ void OnTick()
          smena_trendaB=-1;
         }
         
-        Alert(vol_hvost_p);
+         
 
       smena_trendaS=0;
       if(tru_trend==ptru_trend)smena_trendaS=1;
@@ -306,7 +306,7 @@ void OnTick()
       Last2();
       if((tru_trend==1 && Reverse==false) || (trend==2 && Reverse==true))
         {
-         if(BuyCount+SellCount==0)
+         if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
             if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();return;}
@@ -317,7 +317,7 @@ void OnTick()
 
       if((tru_trend==2 && Reverse==false) || (trend==1 && Reverse==true))
         {
-         if(BuyCount+SellCount==0)
+         if(BuyCount+SellCount==0 && work==true)
            {
             MyMarkets();
             if(LastCom>=MathAbs(StopTrade)){ptime=time[0]+StopBars*PeriodSeconds();return;}
